@@ -8,11 +8,11 @@
 
 ## 1. Descripción del Proyecto
 
-Este proyecto aborda la migración y refactorización de un modelo orientado a objetos del dominio `Figura` / `Poligono` / `Lado` originado en Java hacia un diseño idiomático en Python[cite: 30, 38]. Se aplican los principios de:
-* Encapsulamiento por convención frente al control estático[cite: 30].
-* Descriptores `@property` frente a getters/setters artificiales[cite: 30].
-* Relaciones estructurales definidas por el ciclo de vida (Composición, Agregación, Asociación) y copia defensiva[cite: 30].
-* Contratos explícitos mediante Clases Abstractas (`abc.ABC`) frente a contratos estructurales desacoplados vía Duck Typing (`typing.Protocol`)[cite: 30].
+Este proyecto aborda la migración y refactorización de un modelo orientado a objetos del dominio `Figura` / `Poligono` / `Lado` originado en Java hacia un diseño idiomático en Python. Se aplican los principios de:
+* Encapsulamiento por convención frente al control estático.
+* Descriptores `@property` frente a getters/setters artificiales.
+* Relaciones estructurales definidas por el ciclo de vida (Composición, Agregación, Asociación) y copia defensiva.
+* Contratos explícitos mediante Clases Abstractas (`abc.ABC`) frente a contratos estructurales desacoplados vía Duck Typing (`typing.Protocol`).
 
 ---
 
