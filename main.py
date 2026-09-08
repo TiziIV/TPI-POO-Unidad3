@@ -34,8 +34,8 @@ def main() -> None:
     for poligono in (t, c, p, h):
         taller.recibir(poligono)
     print(f"  Inventario del taller: {len(taller.inventario())} polígonos")
-    for poligono in taller.inventario():
-        print(f"    - {poligono!r}")
+    for item in taller.inventario():
+        print(f"    - {item!r}")
 
     print("\n" + "=" * 70)
     print("4. Evidencia: Polígono SOBREVIVE al Taller (agregación)")
@@ -63,7 +63,7 @@ def main() -> None:
     print("6. Falla temprana: instanciar Poligono abstracto sin lados_esperados()")
     print("=" * 70)
     try:
-        Poligono("figura inválida", "gris", [Lado(1), Lado(1), Lado(1)])
+        Poligono("figura inválida", "gris", [Lado(1), Lado(1), Lado(1)])  # type: ignore[abstract]
         print("  ERROR: no debería poder instanciarse")
     except TypeError as e:
         print(f"  Falló al CONSTRUIR (no al usar), como se esperaba:\n  {e}")

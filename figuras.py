@@ -201,7 +201,7 @@ class FactoriaPoligonoRegular:
         clase_destino = mapa.get(cantidad_lados)
         if clase_destino is None:
             raise ValueError(f"No hay polígono concreto registrado para {cantidad_lados} lados.")
-        return clase_destino(nombre, color, lados)
+        return clase_destino(nombre, color, lados)  # type: ignore[abstract]
 
 
 # ==============================================================================
