@@ -1,23 +1,49 @@
-# Informe — Parte 1: Diagnóstico de Java-ismos
+# Informe — TP Integrador Unidad 3 (POO)
 
-## 1. Tabla resumen de los 8 Java-ismos de diseño
+## 1. Los 8 java-ismos de diseño (Parte 1)
 
-| # | Ubicación | Antipatrón / Java-ismo detectado | Solución idiomática en Python | Inversión conceptual |
+| # | Ubicación | Java-ismo | Solución Python | Inversión conceptual |
 |:--|:---|:---|:---|:---|
-| **1** | `Figura.getNombre`, `Figura.getColor` | Getters preventivos vacíos sin lógica. | Acceso directo a atributos (`self.nombre`, `self.color`). | Principio de acceso uniforme: no se encapsula preventivamente por miedo al compilador; si se requiere lógica futura se usa `@property` sin alterar la interfaz pública. |
-| **2** | `Lado.getLongitud`, `Lado.setLongitud` | Getter y Setter explícitos estilo JavaBean para validar invariantes. | `@property` y `@longitud.setter`. | Se preserva la sintaxis limpia de acceso a atributos (`lado.longitud = 5`) ejecutando validaciones subyacentes mediante descriptores. |
-| **3** | `Poligono.catalogo = []` | Atributo mutable de clase usado como variable `static` compartida. | Eliminar el atributo de clase; gestionar colecciones en un repositorio externo explícito. | Evitar estado global mutable oculto y efectos secundarios en la instanciación de entidades de dominio. |
-| **4** | `Poligono.__init__(..., lados=[], observaciones=[])` | Argumentos por defecto mutables en funciones. | Valor centinela `None`: `lados=None, observaciones=None`. | En Python los valores por defecto se evalúan al definir la función, no al invocarla; si son mutables, todas las instancias comparten la misma lista en memoria. |
-| **5** | `Poligono.__init__` | Omisión deliberada de `super().__init__()` y duplicación manual de atributos. | Llamada explícita a `super().__init__(nombre, color)`. | Respeta el MRO (Method Resolution Order) y asegura la inicialización cooperativa completa de la jerarquía (e.g. `_construida = True`). |
-| **6** | `Poligono.perimetro` | Bucle acumulador procedural manual (`for` con acumulador `total`). | Expresión generadora con `sum()`: `sum(l.longitud for l in self._lados)`. | Estilo declarativo/funcional de alto nivel, más conciso, legible y optimizado en C. |
-| **7** | `Triangulo.__init__` y `Cuadrado.__init__` | Simulación artesanal de sobrecarga de constructores con `*args`, `len` e `isinstance`. | Parámetros con valores por defecto o Factory Methods con `@classmethod`. | En Python no existe la sobrecarga estática en compilación; la flexibilidad se logra con argumentos opcionales claros o fábricas semánticas. |
-| **8** | `Poligono.getLados` y `self._lados = lados` | Fuga de encapsulamiento por aliasing de colección interna (el octavo oculto). | Copia defensiva al recibir (`list(lados)`) y retorno inmutable (`tuple(self._lados)`). | Proteger el estado interno del objeto impidiendo que mutaciones externas rompan las invariantes de la clase. |
+| 1 | `Figura.getNombre/getColor` | Getters vacíos sin lógica | Atributos directos / `@property` | Acceso uniforme: no se encapsula por miedo, solo con lógica real |
+| 2 | `Lado.getLongitud/setLongitud` | Getter/setter estilo JavaBean | `@property` + `@longitud.setter` | Sintaxis limpia con validación oculta detrás |
+| 3 | `Poligono.catalogo = []` | Atributo de clase mutable ("static") | Se elimina | Evita estado global oculto |
+| 4 | `__init__(lados=[], observaciones=[])` | Default mutable compartido | `lados=None` + centinela | Defaults se evalúan una sola vez al definir la función |
+| 5 | `Poligono.__init__` | `super().__init__()` omitido | Llamada explícita a `super()` | Respeta el MRO e inicialización cooperativa |
+| 6 | `Poligono.perimetro` | Bucle acumulador manual | `sum(l.longitud for l in ...)` | Estilo declarativo, más idiomático |
+| 7 | `Triangulo/Cuadrado.__init__` | Sobrecarga simulada con `*args`+`isinstance` | Parámetros opcionales | Python no tiene sobrecarga estática; se resuelve con defaults |
+| 8 | `Poligono.getLados`/`self._lados=lados` | Aliasing: fuga de encapsulamiento | Copia defensiva (`list(...)`/`tuple(...)`) | Protege invariantes de mutación externa |
 
-## 2. Limpieza de ruido sintáctico
+**Ruido sintáctico limpiado** (no cuenta como java-ismo): `;` al final de línea, `== True`, concatenación con `+` reemplazada por f-strings, y el type hint `-> int` que devolvía un `str`.
 
-Se eliminaron del código los siguientes vicios sintácticos que no constituyen problemas de diseño OO pero no son idiomáticos en Python:
+## 2. Agregación vs. Composición vs. Asociación (Parte 2)
 
-* **Punto y coma (`;`):** Se removieron los puntos y coma al final de las sentencias.
-* **Comparación explícita con booleanos:** Se reemplazó `if activo == True:` por la evaluación veritativa directa `if activo:`.
-* **Concatenación con `+`:** Se cambiaron las concatenaciones manuales de strings y `str(...)` por f-strings (`f"Perímetro: {t.perimetro()}"`).
-* **Type hint inconsistente:** Se corrigió la firma `def area(self) -> int` que retornaba un string `"area sin calcular"`.
+La sintaxis de guardar la referencia (`self._algo = algo`) es parecida en los tres casos, pero lo que distingue la relación es **quién construye el objeto**:
+- **Composición** (`Poligono`—`Lado`): `self._lados = [Lado(...) for l in lados]` — el `Poligono` **crea copias nuevas**; si muere, sus `Lado` no sobreviven.
+- **Agregación** (`Taller`—`Poligono`): `self._poligonos.append(poligono)` — recibe un objeto **ya construido afuera**; si el `Taller` muere, el `Poligono` sigue vivo.
+- **Asociación** (`Lado`—`Etiqueta`): `self._etiqueta = etiqueta` — también recibe un objeto externo, pero es **opcional (0..1)**, no representa "parte de".
+
+## 3. Decisión sobre PoligonoRegular (Parte 3)
+
+En el original, `PoligonoRegular` heredaba de `Poligono` solo para compartir tipo en una lista — necesidad de Java, no de Python (acá el duck typing lo resuelve). **Se descartó la herencia** y se reemplazó por `FactoriaPoligonoRegular.crear(...)`, una Factory Method que devuelve una instancia de la subclase concreta correcta (`Triangulo`, `Cuadrado`, etc.) según la cantidad de lados. El dominio no dice "regular ES-UN tipo aparte"; dice "regular ES uno de los polígonos ya existentes, con lados iguales". Falla temprana verificada: `Poligono("x","y",[...])` lanza `TypeError` al construir, por ser `ABC`.
+
+## 4. ABC vs. Protocol (Parte 4)
+
+Una ABC exige herencia explícita; `PlanoCAD` no puede heredar de nada nuestro porque no se puede modificar `libreria_externa.py`. `Protocol` resuelve esto porque el cumplimiento es **estructural**: alcanza con tener el método `exportar() -> str`, sin conocer el contrato (`isinstance(plano, Exportable)` → `True` sin herencia).
+
+**¿Lenguaje o dominio?** Depende del contrato: en `Poligono` (Parte 3) la elección de ABC la impone el **dominio** (queremos forzar `lados_esperados()` como regla propia de ser polígono). En `Exportable`/`PlanoCAD` (Parte 4) la elección de Protocol la impone el **lenguaje/entorno** (no se puede tocar código de terceros). No hay una regla única: se usa herencia cuando el dominio la exige, y contrato estructural cuando la herencia es inviable.
+
+## 5. Tabla de equivalencias sobre mi código (Parte 5)
+
+| Elemento en Java | Cómo quedó en Python | ¿Directa o rediseño? | Por qué |
+|:---|:---|:---|:---|
+| Getters/Setters | `@property` | Rediseño | Solo se usa donde hay lógica real |
+| `private` | Prefijo `_` | Rediseño | Convención, no protección del compilador |
+| `List<Poligono>` con tipo común | Duck typing, sin ancestro artificial | Rediseño | No hace falta tipo declarado para mezclar objetos |
+| Sobrecarga de constructores | Un solo `__init__` con `Optional` | Rediseño | Python no soporta sobrecarga por firma |
+| `interface Exportable` | `Protocol` | Rediseño | Cumplimiento estructural, sin `implements` |
+| Clase abstracta con método abstracto | `ABC` + `@abstractmethod` | Directa | El concepto existe igual en ambos lenguajes |
+| `toString()` | `__repr__` | Directa | Mismo rol, distinto nombre |
+
+## 6. Cierre
+
+**Cambió** el criterio para usar herencia (se abandonó cuando era solo ceremonia de compilador, como en `PoligonoRegular`) y el mecanismo de contratos (`Protocol` en vez de interfaces obligatorias, por la restricción de no poder tocar `libreria_externa.py`). **Se mantuvo igual** el diseño conceptual del dominio: qué relación corresponde a cada par de clases (composición, agregación, asociación, herencia) es una decisión de modelado independiente del lenguaje usado para expresarla.
